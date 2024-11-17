@@ -12,6 +12,9 @@ files <- list(
   input = list(
     enoe = "data/raw/enoe/enoe.csv",
     fence_construction = "data/raw/fence_construction/csv/"
+  ),
+  output = list(
+    enoe = "data/processed/enoe.csv"
   )
 )
 
@@ -587,3 +590,14 @@ df_enoe_proc %>%
 # this is `relocate()`. If you want to change the name of columns, you can use
 # `rename()`. For selecting columns (or removing them), use the `select()` 
 # command. For more information on these, please check the lecture slides.
+
+
+#___________________________________________________________________________####
+#   Export                                                                  ####
+
+# At the bottom of your script, you should export data frames created in your
+# data preparation. I store the prepared ENOE data set in the data/processed/
+# folder of my repository
+
+df_enoe_proc %>% 
+  write_csv(files$output$enoe)
