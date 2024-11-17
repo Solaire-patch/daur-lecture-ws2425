@@ -10,7 +10,8 @@ library(tidyverse)
 
 files <- list(
   input = list(
-    enoe = "data/raw/enoe/enoe.csv"
+    enoe = "data/raw/enoe/enoe.csv",
+    fence_construction = "data/raw/fence_construction/csv/"
   )
 )
 
@@ -149,7 +150,10 @@ df_enoe_proc <- df_enoe %>%
       educ >= 12 & educ < 17 ~ "12-17",
       educ >= 17 & educ < 19 ~ "17-19",
       educ >= 19 ~ "over 18"
-    )
+    ),
+    # Replace NA in columns that end on "_grouped" (i.e. grouped income, 
+    # education, and age) with "Missing"
+    across(ends_with("_grouped"), ~ ifelse(is.na(.), "Missing", .))
   )
 
 
@@ -204,9 +208,10 @@ df_enoe_proc %>% # Note we do not overwrite the data set here (we do that below)
     if_all(c(municipality, year, quarter), ~ !is.na(.))
   )
 
-# Note: that when filtering income based on the 99% quantile we also remove
-# observations with missing income. If you want to keep those observations,
-# you will have to add an OR statement to the income filter condition.
+# Note that when filtering income based on the 99% quantile we also remove
+# observations with missing income. If you want to keep those observations, e.g.
+# when using income brackets with category "Missing", you will have to add an 
+# OR statement to the income filter condition:
 
 df_enoe_proc <- df_enoe_proc %>% 
   filter(
@@ -233,9 +238,10 @@ df_enoe_proc <- df_enoe_proc %>%
 # you have wondered "What happens if my condition evaluates to NA?", with
 # `if_else` you can set a self-chosen value for that case using the `missing`
 # argument. It doesn't really matter here because base R's `ifelse` already
-# resolves those to NA but it is nice to know, I guess.
+# resolves those to NA but it is nice to know that the option for default
+# values exists.
 
-df_enoe_proc %>% 
+df_enoe_proc <- df_enoe_proc %>% 
   mutate(
     poverty_num = if_else(
       income < median(income, na.rm = T), 
@@ -246,129 +252,216 @@ df_enoe_proc %>%
   )
 
 
-remove observations above the
-quantile(df_enoe_proc$income, seq(0.999, 1, 0.0001), na.rm = T)
-
-
-
-
-
-
-
-
-# This already looks 
-hist(log(df_enoe_proc$income))
-
-
-
-
-df_enoe_proc %>% names()
-
-
-
-
-
-
-# Concatenate year and quarter to create identifier for the period of
-# observation
-period = str_c(year, "-", quarter),
-# Numeric period identifier (perhaps for calculations)
-period_num = year + as.numeric(str_sub(quarter, 2, 2))/4,
-# Binary indicators
-poverty = ifelse(income < .6 * median(income, na.rm = T), "Yes", "No"),
-empl = ifelse(empl_status %in% c("Full-time", "Part-time"), "Yes", "No"),
-married = ifelse(marital_status == "Married", "Yes", "No"),
-across(
-  all_of(c("poverty", "married", "empl", "migrate")),
-  ~ ifelse(. == "Yes", 1, 0),
-  .names = "{.col}_num"
-),
-.before = 2
-
-
-
 #___________________________________________________________________________####
-#   Mutating Columns                                                        ####
+#   Joining Data                                                            ####
 
-df_enoe_proc <- df_enoe %>% 
-  mutate(
-    age_grouped = case_when(
-      age < 20 ~ "under 20",
-      age >= 20 & age < 30 ~ "20-29",
-      age >= 30 & age < 40 ~ "30-39",
-      age >= 40 & age < 50 ~ "40-49",
-      age >= 50 & age < 60 ~ "50-59",
-      age >= 60 ~ "over 59"
-    ),
-    income_grouped = case_when(
-      income == 0 ~ "0",
-      income < 1000 ~ "1-999",
-      income >= 1000 & income < 2000 ~ "1000-1999",
-      income >= 2000 & income < 3000 ~ "2000-2999",
-      income >= 3000 & income < 4000 ~ "3000-3999",
-      income >= 4000 & income < 5000 ~ "4000-4999",
-      income >= 5000 & income < 6000 ~ "5000-5999",
-      income >= 6000 & income < 7000 ~ "6000-6999",
-      income >= 7000 & income < 8000 ~ "7000-7999",
-      income >= 8000 & income < 9000 ~ "8000-9999",
-      income >= 9000 & income < 10000 ~ "9000-9999",
-      income >= 10000 ~ "above 9999"
-    ),
-    # Concatenate year and quarter to create identifier for the period of
-    # observation
-    period = str_c(year, "-", quarter),
-    # Numeric period identifier (perhaps for calculations)
-    period_num = year + as.numeric(str_sub(quarter, 2, 2))/4,
-    # Binary indicators
-    poverty = ifelse(income < .6 * median(income, na.rm = T), "Yes", "No"),
-    empl = ifelse(empl_status %in% c("Full-time", "Part-time"), "Yes", "No"),
-    married = ifelse(marital_status == "Married", "Yes", "No"),
-    across(
-      all_of(c("poverty", "married", "empl", "migrate")),
-      ~ ifelse(. == "Yes", 1, 0),
-      .names = "{.col}_num"
-    ),
-    .before = 2
+# We already have the `fence` variable in our data set but let's remove that
+# column to join information on fence construction using the data sets in the
+# folder "data/raw/fence_construction" of the slides repository
+# (see https://github.com/empwifo/dauR-slides)
+
+df_enoe_proc <- df_enoe_proc %>% 
+  select(-fence) # Removes the column (see below for more on `select`)
+
+
+##__________________________________________________________________________####
+##  Preparation of Fence Construction Data                                  ####
+
+# There are several csv-files in the fence_construction-folder. Each file
+# contains for a specific year the information whether fence construction 
+# started in Q1, Q2, Q3, or Q4. All files are structured similarly, so using
+# what we learning in the lecture on programming, we can read all files in
+# using the `map()` command. For this, we first list all csv files in the
+# fence_construction-folder. Note that we included the path to the csv files
+# in the list at the top of the script.
+
+df_fence_construction <- files$input$fence_construction %>% 
+  list.files() %>% 
+  # Sets names for the list; names are the file names with ".csv" removed 
+  # (dots have to be escaped using double backslashes)
+  set_names(nm = str_remove(., "\\.csv")) %>% 
+  map(
+    ~ read_csv(
+      # Bind the path to the csv file in front of the file names (the dot 
+      # represents the file name / list entry on which the function is applied)
+      str_c(files$input$fence_construction, .)
+    )
   )
 
 
-#___________________________________________________________________________####
-#   Filtering Observations                                                  ####
+# We now have a list of data frames with each entry corresponding to a certain
+# year. This data should of course be merged into a single data frame. We do so
+# using the `bind_rows` command that can be applied to multiple data frames but
+# also a list of data frames. It appends the data frames row-wise. Using the
+# `.id` argument we can let R create a new column for the list names. That way
+# we also get the information on which year a row corresponds to.
 
-df_enoe_proc <- df_enoe_proc %>% 
-  filter(!is.na(fence), !is.na(municipality))
+df_fence_construction <- df_fence_construction %>% 
+  bind_rows(.id = "year")
 
 
-#___________________________________________________________________________####
-#   Define Treatment Status                                                 ####
+# The data frame contains several issues. Let's start with the first: `year`
+# is not a numeric, so let's convert its data type in a `mutate` call
 
-# Create data set with treatment status of municipalities
-df_municipality_treated <- df_enoe_proc %>% 
-  select(municipality, fence) %>% 
-  filter(!is.na(municipality)) %>% 
-  distinct() %>%
+df_fence_construction <- df_fence_construction %>% 
+  mutate(year = as.numeric(year))
+
+
+# Next problem: The data is not stored in a format that is very useful to us
+# because it is too long, i.e. each row corresponds to a year but the data we
+# want to merge it to has as rows observations from a quarter. Let's bring the
+# data into a long format using `pivot_longer`. For this, we specify which
+# columns we want to lengthen, in what newly created column the former column 
+# names should be stored, and what the column in which the values are stored
+# should be named
+
+df_fence_construction <- df_fence_construction %>% 
+  pivot_longer(starts_with("Q"), names_to = "quarter", values_to = "fence")
+
+
+# We know that the earliest data entry in the ENOE survey is from Q3 2003 and
+# the last is Q2 2013, so let's filter the data accordingly. Let us also
+# remove missings in municipality.
+
+df_fence_construction <- df_fence_construction %>% 
+  filter(
+    !(year == 2003 & quarter %in% c("Q1", "Q2")),
+    !(year == 2013 & quarter %in% c("Q3", "Q4")),
+    !is.na(municipality)
+  )
+
+
+# When inspecting the data, we see that several quarters have missing 
+# observations in our treatment variable. A conservative assumption would be
+# that fence construction did not start in these quarters. Let us therefore
+# impute their value with their leading quarters value. Note that for this
+# computation, we need some grouping because we have to make sure that we only
+# do this imputation within municipalities. Also, we need to arrange our data
+# first by year and quarter.
+
+df_fence_construction <- df_fence_construction %>% 
+  arrange(year, quarter) %>% 
+  # Grouping let's us conduct computations within groups of data instead of
+  # across all variables. When printing the data set to the console, you can see
+  # that the tibble is grouped by municipality which has 23 groups
   group_by(municipality) %>% 
   mutate(
-    treatment = ifelse(any(fence) == 1, 1, 0),
-    .keep = "unused"
-  ) %>% 
-  distinct()
+    fence = ifelse(
+      is.na(fence),
+      lag(fence, default = 0),
+      fence
+    )
+  )
+
+
+# Note: `lag` gives us the previous value within a vector. Since the first 
+# element in a vector does not have previous value, we set it to 0 by `default`.
+# If you want to get the next value in a vector, you can use `lead()`.
+
+
+# You might have noticed that we could have written all these transformations
+# in one pipe. For a clean and readable code, let's do that quickly here:
+
+df_fence_construction <- files$input$fence_construction %>% 
+  list.files() %>% 
+  set_names(nm = str_remove(., "\\.csv")) %>% 
+  map(~ read_csv(str_c(files$input$fence_construction, .))) %>% 
+  bind_rows(.id = "year") %>% 
+  mutate(year = as.numeric(year)) %>% 
+  pivot_longer(starts_with("Q"), names_to = "quarter", values_to = "fence") %>% 
+  arrange(year, quarter) %>% 
+  group_by(municipality) %>% 
+  mutate(
+    fence = ifelse(
+      is.na(fence),
+      lag(fence, default = 0),
+      fence
+    )
+  )
+
+
+# Please note that as a general rule, you should always import your data at the 
+# top of the script! I only imported the data here as to not confuse you
+# at the top.
+
+
+##__________________________________________________________________________####
+##  Joining Fence Construction with ENOE                                    ####
+
+# We join the fence construction data set with the ENOE data by simply merging
+# over columns present in both data sets (in this case year, quarter, and
+# municipality). The join is made over column names so if the names in both
+# data sets do not match, just rename them to be consistent or take a look
+# at the documentation for the `by` argument
+
+df_enoe_proc %>% 
+  left_join(df_fence_construction, by = c("year", "quarter", "municipality"))
+
+# We can also include some failsafe checks in here, e.g. by pre-specifying
+# the relationship between our data sets. We know that we have several 
+# individuals recorded within municipalities and year-quarters, so we know that
+# "many" observations in df_enoe_proc have to be joined with "one" observation
+# in df_fence_construction, hence `relationship = "many-to-one"`. If this R 
+# finds other kind of joins, e.g. "many-to-many" during the matching, an error
+# will be thrown so that we know that something's not right.
 
 df_enoe_proc <- df_enoe_proc %>% 
   left_join(
-    df_municipality_treated, 
-    by = "municipality",
+    df_fence_construction, 
+    by = c("year", "quarter", "municipality"),
     relationship = "many-to-one"
   )
 
 
-#___________________________________________________________________________####
-#   Summarizing Variables                                                   ####
+# We did a left join here because all we need to know is whether observations
+# in the ENOE data set were treated. A full join would have extended the ENOE
+# data with empty columns in ENOE characteristics for all 
+# municipality-year-quarter that are not found in the ENOE data set (and we do
+# not want that). An inner join would also not have been appropriate here 
+# because observations in the ENOE data set that are not matched with an
+# observation in the fence construction data set would have been dropped in the
+# join, leaving us no way of checking non-randomness in missing information on
+# fence construction.
 
-df_summary <- df_enoe_proc %>% 
+
+# Now that we have joined information on whether an individual was treated,
+# we can determine which observations are in the treatment and which in the
+# control group. Let us define the treatment group as individuals located in
+# a municipality that sometime in the observation period was exposed to the
+# treatment, i.e. the construction of a border fence. This is pretty simple 
+# because all we have to do is create a new column that takes on the value 1 if
+# a municipality suffices the condition `fence == 1` at any point in the data.
+# We can do this by grouping our observations again, but this time we will make
+# use of `mutate()`'s short-hand `.by` argument.
+
+df_enoe_proc <- df_enoe_proc %>% 
+  mutate(treatment = if_else(any(fence == 1), 1, 0), .by = municipality)
+
+
+#___________________________________________________________________________####
+#   Summarizing Data                                                        ####
+
+# Usually, we would leave the summarizing of data to be done in a separate
+# script, at least if it is for data exploration and not transformation. Since
+# this will be rather short, we will do this here but keep in mind that in your
+# group project you should treat data preparation and exploration separately.
+
+# When looking at our data, what we are probably most interested in is the
+# difference between our treatment and control group. So, for summary statistics
+# let us take a look at mean values and standard deviations.
+
+# Using the `summarize()` command we can easily create summary statistics over
+# multiple (grouped) columns. In our case, we would like to take a look at
+# the proportion of individuals that migrated, were married, employed etc., as
+# well as the distribution of income, age, and education.
+
+# Instead of providing a single function in `across`, wen can also provide a
+# (named) list of anonymous functions as seen for income and age below.
+
+df_sum_stats <- df_enoe_proc %>% 
   summarize(
     across(
-      c(married_num, empl_num, migrate_num),
+      c(migrate_num, female_num, married_num, employed_num),
       ~ mean(., na.rm = T),
       .names = "{.col}__mean"
     ),
@@ -380,23 +473,117 @@ df_summary <- df_enoe_proc %>%
     .by = treatment
   )
 
-df_summary %>% 
+
+# This data set is obviously not in the correct format as it is too wide for
+# us and therefore too messy. Let's tidy it by creating a data frame with
+# each row corresponding to a variable. The columns in the target data frame
+# should therefore containing mean/standard deviation for the treatment and 
+# control group.
+
+# For the lengthening of our data, we can make use of the separator "__" (double
+# underscore) that we specified above to separate the column name and the 
+# function name. ".value" in `names_to` refers to `mean` and `sd`, respectively.
+
+df_sum_stats <- df_sum_stats %>% 
   pivot_longer(
-    -treatment,
-    names_to = c("variable", "statistic"),
-    values_to = "value",
+    -treatment, # All columns except treatment
+    names_to = c("variable", ".value"),
     names_sep = "__"
-  ) %>% 
-  pivot_wider(
-    names_from = c("statistic", "treatment"),
-    values_from = "value"
   )
 
 
+# We know only have to bring our data into a wider format to store the treatment
+# information column-wise. We can do this using `pivot_wider`
+
+df_sum_stats <- df_sum_stats %>% 
+  pivot_wider(names_from = treatment, values_from = c(mean, sd))
 
 
+# Let us quickly re-order the column for better readability
+
+df_sum_stats <- df_sum_stats %>% 
+  relocate(variable, mean_1, sd_1, mean_0, sd_0)
 
 
+# Of course, we could have done all this in a single pipe:
+
+df_sum_stats <- df_enoe_proc %>% 
+  summarize(
+    across(
+      c(migrate_num, female_num, married_num, employed_num),
+      ~ mean(., na.rm = T),
+      .names = "{.col}__mean"
+    ),
+    across(
+      c(income, age),
+      list(mean = ~ mean(., na.rm = T), sd = ~ sd(., na.rm = T)),
+      .names = "{.col}__{.fn}"
+    ),
+    .by = treatment
+  ) %>% 
+  pivot_longer(
+    -treatment, # All columns except treatment
+    names_to = c("variable", ".value"),
+    names_sep = "__"
+  ) %>% 
+  pivot_wider(names_from = treatment, values_from = c(mean, sd)) %>% 
+  relocate(variable, mean_1, sd_1, mean_0, sd_0)
 
 
+##__________________________________________________________________________####
+##  Simple Extension to Categorical Data                                    ####
 
+# If we want to include categorical data in our summary statistics table,
+# we could have first created dummary variables for the categorical data. For
+# example, we likely would want to include information on the years of schooling
+# in our summary statistics, so let us use `dummy_cols()` from the `fastDummies`
+# package before summarizing the data. This function creates dummy variables
+# for the specified columns with the corresponding columns names consisting
+# of the variable name and the level name (e.g. `educ_grouped_12-17`).
+
+# All we have to do after creating the dummy variables is to add 
+# `starts_with("educ_grouped_")` in our `across` command and we also get the 
+# portion of individuals in the respective education brackets.
+
+df_enoe_proc %>% 
+  fastDummies::dummy_cols("educ_grouped") %>% 
+  summarize(
+    across(
+      c(
+        migrate_num, female_num, married_num, employed_num, 
+        starts_with("educ_grouped_")
+      ),
+      ~ mean(., na.rm = T),
+      .names = "{.col}__mean"
+    ),
+    across(
+      c(income, age),
+      list(mean = ~ mean(., na.rm = T), sd = ~ sd(., na.rm = T)),
+      .names = "{.col}__{.fn}"
+    ),
+    .by = treatment
+  ) %>% 
+  pivot_longer(
+    -treatment, # All columns except treatment
+    names_to = c("variable", ".value"),
+    names_sep = "__"
+  ) %>% 
+  pivot_wider(names_from = treatment, values_from = c(mean, sd)) %>% 
+  relocate(variable, mean_1, sd_1, mean_0, sd_0)
+
+
+# Note: You can also get the numbers of observations in the `summarize` command,
+# e.g. through the `n()` function that returns the number of rows of your data
+# set. With the number of observations, the mean, and the standard deviation
+# you could easily conduct simple t-tests to test for group differences in
+# observed characteristics.
+
+
+#___________________________________________________________________________####
+#   Some Clean-Up                                                           ####
+
+# Now that we have prepared our data set, we may want to clean it up a bit, e.g.
+# change the ordering of columns. As already seen above, a simple command for
+# this is `relocate()`. If you want to change the name of columns, you can use
+# `rename()`. For selecting columns (or removing them), use the `select()` 
+# command. For more information on these, please check the lecture slides.
