@@ -1,0 +1,89 @@
+---
+title: "Fenced Out: The Impact of Border Construction on US-Mexico Migration"
+subtitle: "A Replication Study"
+author: 
+  - name: "Sven Werenbeck-Ueding"
+aspectratio: 169
+bibliography: references.bib
+date: today
+date-format: long
+format:
+  beamer:
+    theme: Frankfurt
+    include-in-header: custom_theme.tex
+---
+
+# Introduction
+
+## Introduction
+
+- @f20
+- ...
+
+# Data
+
+## Encuesta Nacional de Ocupación y Empleo (ENOE)
+
+- ...
+- ...
+
+## Fence Construction
+
+- ...
+- ...
+
+
+# Methodology
+
+## Empirical Strategy
+
+- ...
+- ...
+
+
+# Results
+
+## Parallel Trends Assumption
+
+::::  {.columns}
+::: {.column width="50%"}
+- ...
+:::
+::: {.column width="50%"}
+
+\begin{figure}
+\begin{center}
+\includegraphics{../figures/event_plot_logit}
+\caption{Event Study Plot}
+\end{center}
+\end{figure}
+
+:::
+::::
+
+## Main Results
+
+::::  {.columns}
+::: {.column width="50%"}
+- ...
+:::
+::: {.column width="50%"}
+
+\input{../tables/reg_table}
+
+:::
+::::
+
+
+# References
+
+## References {.allowframebreaks}
+::: {#refs}
+:::
+
+
+# Appendix
+
+## Event Sudy Results (LPM)
+
+![Event Study Plot](../figures/event_plot_lpm.png){fig-align="center"}
