@@ -110,8 +110,14 @@ df_enoe_proc <- df_enoe %>%
   ) %>% 
   select(id, migrate, municipality, period, age, educ, female, married) %>% 
   # Remove observations for which either the outcome, municipality or period is
-  # missing as these are not usable in the analysis
-  filter(if_all(c(migrate, municipality, period), ~ !is.na(.)))
+  # missing as these are not usable in the analysis; also remove missings in
+  # socio-economic characteristics used in estimation
+  filter(
+    if_all(
+      c(migrate, municipality, period, age, educ, female, married), 
+      ~ !is.na(.)
+    )
+  )
 
 
 #___________________________________________________________________________####

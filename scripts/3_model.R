@@ -201,8 +201,9 @@ event_plots <- event_study_data %>%
       geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = .5) +
       geom_point(aes(y = estimate)) +
       scale_x_continuous(breaks = -4:4) +
-      labs(y = "Estimate with 95% Conf. Int.", x = "Relative Year") +
-      theme_bw()
+      labs(y = "Coefficient", x = "Relative Year") +
+      theme_bw() +
+      theme(text = element_text(size = 8))
   )
 
 event_plots
