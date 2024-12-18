@@ -1,6 +1,8 @@
 # Course Notes: Data Analysis Using R (WiSe 2024/25)
 
 
+## Content
+
 This repository serves as a note repository for the course “Data
 Analysis Using R” held in winter semester 2024/25. In the `lecture`
 folder, you will find the scripts created during the lectures. The rest
@@ -20,20 +22,21 @@ the analysis. A presentation on the results created via
 
 ## Key Findings
 
-<img src="figures/event_plot_logit.png" data-fig-align="center" />
+<img src="figures/event_plot_logit.png" style="width:50.0%"
+data-align="center" />
 
 In “Fenced Out: The Impact of Border Construction on U.S.-Mexico
 Migration”, Feigenberg (2020a) explores how the construction of the
-U.S.-Mexico border fence following the Fence Secure Act in 2006 affected
-the migration decision of potential Mexican migrants. Using
+U.S.-Mexico border fence following the Fence Secure Act from 2006
+affected the migration decision of potential Mexican migrants. Using
 spatio-temporal variations in fence construction as an exogenous shock,
 Feigenberg (2020a) applies a difference-in-differences approach to
 assess changes in migration likelihood. Data on fence construction was
 obtained through U.S. Customs and Border Protection and other government
 records. Data on the migration decision of Mexicans was obtained through
 Mexican household surveys. This repository uses a 50% random draw from
-Feigenberg (2020a)’s data to replicate the results. My findings indicate
-a significant reduction (37.4%) in migration likelihood due to the fence
+Feigenberg (2020b) to replicate the results. My findings indicate a
+significant reduction (37.4%) in migration likelihood due to the fence
 construction, though pre-treatment trends suggest potential
 overstatement of effects (see
 <a href="#fig-event-logit" class="quarto-xref">Figure 1</a>). The
