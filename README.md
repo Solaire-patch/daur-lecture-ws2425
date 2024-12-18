@@ -1,8 +1,6 @@
 # Course Notes: Data Analysis Using R (WiSe 2024/25)
 
 
-## Content
-
 This repository serves as a note repository for the course “Data
 Analysis Using R” held in winter semester 2024/25. In the `lecture`
 folder, you will find the scripts created during the lectures. The rest
@@ -22,7 +20,7 @@ the analysis. A presentation on the results created via
 
 ## Key Findings
 
-<img src="figures/event_plot_logit.png" style="width:50.0%"
+<img src="figures/event_plot_logit.png" style="width:50.0%;height:50.0%"
 data-align="center" />
 
 In “Fenced Out: The Impact of Border Construction on U.S.-Mexico
