@@ -9,9 +9,9 @@ group projects.
 
 The code in this repository replicates the findings of Feigenberg
 (2020a) using data from Feigenberg (2020b) to briefly showcase how such
-an data analysis project can be structured. Please note that the
+a data analysis project can be structured. Please note that the
 structure outlined here serves as orientation only. There are several
-not less good ways of structuring your data analysis project. You can
+equally good ways of structuring your data analysis project. You can
 find the data used throughout the project in the `data` folder. The
 corresponding R scripts are stored under `scripts`. Folders `figures`
 and `tables` contain – not surprisingly – figures and tables created in
