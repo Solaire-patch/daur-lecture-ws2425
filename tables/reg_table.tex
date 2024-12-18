@@ -1,0 +1,29 @@
+\begin{table}
+
+\caption{Impact of Fence Construction on US-Mexico Migration}
+\centering
+\resizebox{\linewidth}{!}{
+\begin{tabular}[t]{lcccc}
+\toprule
+\multicolumn{1}{c}{} & \multicolumn{2}{c}{OLS} & \multicolumn{2}{c}{Logit} \\
+\cmidrule(l{3pt}r{3pt}){2-3} \cmidrule(l{3pt}r{3pt}){4-5}
+ & (1) & (2) & (3) & (4)\\
+\midrule
+Fence Construction & -0.002* & -0.002* & -0.446** & -0.468**\\
+ & (0.001) & (0.001) & (0.220) & (0.220)\\
+Age &  & 0.000*** &  & -0.017***\\
+ &  & (0.000) &  & (0.005)\\
+Female &  & -0.002*** &  & -0.489***\\
+ &  & (0.000) &  & (0.098)\\
+Years of Schooling &  & 0.000 &  & 0.010\\
+ &  & (0.000) &  & (0.021)\\
+Married &  & -0.002*** &  & -0.627***\\
+ &  & (0.001) &  & (0.108)\\
+Municipality FE & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$\\
+Year-quarter FE & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$\\
+Observations & 153590 & 153590 & 153508 & 153508\\
+\bottomrule
+\multicolumn{5}{l}{\rule{0pt}{1em}* p < 0.1, ** p < 0.05, *** p < 0.01}\\
+\multicolumn{5}{l}{\rule{0pt}{1em}Parentheses shows standard errors clustered on municipality-level.}\\
+\end{tabular}}
+\end{table}

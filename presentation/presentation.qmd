@@ -1,0 +1,247 @@
+---
+title: "Fenced Out: The Impact of Border Construction on US-Mexico Migration"
+subtitle: "A Replication Study"
+author: 
+  - name: "Sven Werenbeck-Ueding"
+aspectratio: 169
+bibliography: references.bib
+date: today
+date-format: long
+format:
+  beamer:
+    theme: Frankfurt
+    include-in-header:
+      - text: |
+          \usepackage{multicol} 
+      - file: custom_theme.tex
+execute: 
+  echo: false
+---
+
+```{r include=TRUE}
+library(scales)
+```
+
+
+# Introduction
+
+## Motivation
+
+- Global migration increased by 43% over the last two decades
+
+- Inflow countries pay more attention to border control and migration regulation
+
+  - Ten-fold increase of border patrols in the U.S.
+  - Border patrols are intended to deter potential (irregular) migrants
+  - U.S. efforts focused on deterring illegal migration by raising migration costs
+
+- Existing literature
+  
+  - Little scientific evidence on cost-effectiveness of border enforcement
+  - Less known how border enforcement shapes migration patterns
+  - Limited, mostly descriptive evidence because changes in migration costs are often not exogenous
+  
+- This presentation: Replication study of @f20 using data provided by @f20data
+
+
+## Background
+
+- U.S.-Mexican border is the most frequently crossed international border
+
+- Migration restriction efforts are rather new
+
+  - 1965: Immigration and Nationality Act
+  - 1986: Immigration Reform and Control Act made hiring undocumented immigrants illegal
+  - 1996: Illegal Immigration Reform and Immigrant Responsibility Act authorized the construction of a border fence
+  
+- Secure Fence Act (2006) set specific locations for the construction of 689 miles fencing
+
+- Variation in local construction starting dates due to logistical and administrative processes
+
+  - Independent of migrant behavior or local migration trend
+  - Introduces exogeneity in the geographical distribution and timing of border fence construction
+
+
+## Research Question(s)
+
+1. What effect does changing of costs (of migration) have on migration from Mexico to the United States?
+
+2. What effect does changing of costs have on the stock of Mexicans living in the U.S.? (*not considered*)
+
+3. How does the impact of changing costs vary based on migrants’ access to alternative crossing locations, as well as their demographic characteristics? (*not considered*)
+
+\begin{itemize}
+\item[$\Rightarrow$] Use spatio-temporal (exogenous) variation in the construction dates of U.S. border fences to assess the effect of expanding border fences on the migration decision of individuals
+\end{itemize}
+
+\begin{itemize}
+\item[$\Rightarrow$] This replication study will focus on RQ1
+\end{itemize}
+
+
+# Data
+
+## Data on Fence Construction
+
+- Data on potential fence construction sites self-collected
+
+- Various sources for identifying locations
+  
+  - News articles
+  - Legal documents and published construction contracts, e.g. CPB^[U.S. Customs and Border Protection] and GAO^[U.S. Government Accountability Office]
+
+::: {.incremental}
+- Cross-checked with Sierra Club representatives, an environmental organization observing effects of U.S.-Mexico border fence on wildlife
+
+  1. Was the fence indeed constructed?
+  
+  2. When has the fence construction begun?
+  
+  3. How long is the constructed fence?
+:::
+
+
+## Data on Migration Decision
+
+- Data on migration decision taken from the Mexican Encuesta Nacional de Ocupación y Empleo (ENOE)
+
+  - Quarterly rotating panel
+  - Households are included for 5 quarters
+
+- Potential migrants restricted to ages 15 to 65
+
+- Data includes age, gender, marital status and education for all household members
+
+- Sample restricted to observations with full information
+
+- Limitation: Does not capture migration of the whole household!
+
+- Replication study uses a random 50% sample of the original data
+
+
+## Descriptive Statistics
+
+\input{../tables/summary_statistics}
+
+
+# Methodology
+
+## Empirical Strategy
+
+**Difference-in-Differences**
+
+- Exploit spatio-temporal variation in the start of fence construction to identify the effect of a border fence on the migration decision
+
+- Two-way fixed effects (logit) model with staggered treatment exposure $$Pr(Y_{mqi}=1\mid z_{mqi})=\wedge(\alpha+\beta\times \text{fence}_{mqi}+\Gamma X_{mqi}+\gamma_m+\lambda_q)$$
+
+  - $Y_{mqi}$: Equals 1 if individual $i$ migrated from municipality $m$ in year-quarter $q$
+  - $\text{fence}_{mqi}$: Equals 1 if fence construction started in the corresponding year-quarter
+  - $X_{mqi}$: Socio-economic characteristics
+  - $\gamma_m$, $\lambda_q$: Municipality / year-quarter fixed effects
+
+- Linear probability model as robustness check leads to similar results
+
+
+## Identifying Assumption
+
+- Parallel Trends Assumption (PTA): Migration decision of treated and non-treated municipalities should have developed in parallel in absence of fence construction
+
+- Tested in an event study $$Pr(Y_{mqi}=1\mid z_{mqi})=\wedge(\alpha+\sum_{t=-4}^4\beta_t\times \text{fence}_{mqi}+\Gamma X_{mqi}+\gamma_m+\lambda_q),$$ where $t$ are years relative to the starting date of fence construction
+
+- Implemented with relative years binned starting 4 years prior/after treatment exposure
+
+- Pre-treatment period coefficients should not be significant if PTA holds
+
+
+# Results
+
+## Parallel Trends Assumption
+
+::::  {.columns}
+::: {.column width="50%"}
+
+- Pattern in pre-treatment coefficients indicates PTA violation
+
+- Post-trends show clear pattern but lack statistical significance
+
+- OLS results show similar patterns (see @fig-event-ols)
+
+- "Random" sampling could explain difference in results to @f20
+
+\begin{itemize}
+\item[$\Rightarrow$] Differential out-migration might be driven by pre-trends
+\end{itemize}
+
+:::
+::: {.column width="50%"}
+
+\begin{figure}
+\includegraphics[width=0.9\linewidth]{../figures/event_plot_logit}
+\caption{Event Study Results (Logit)}
+\flushleft\tiny\textit{Note:} $t=0$ represents the start of fence construction. Standard errors are clustered on municipality-level and error bars show 95\% confidence intervals of fence construction coefficients.
+\label{fig-event-logit}
+\end{figure}
+
+:::
+::::
+
+
+## Main Results
+
+::::  {.columns}
+::: {.column width="50%"}
+```{r echo=FALSE}
+main_effect <- 1 - exp(-0.468)
+```
+
+
+- Fence construction significantly reduces potential migrants' likelihood of migrating
+
+  - By approx. $1-e^\beta=`r label_percent(accuracy = .1, suffix = "\\%")(main_effect)`$
+  - Relative to baseline level of 3.34 migration episodes per 1,000 respondents
+
+- OLS indicate 0.2 percentage points significantly lower migration likelihood
+
+- Results are robust to the estimator and including additional controls
+
+\begin{itemize}
+\item[$\Rightarrow$] Construction of border fence is effective in deterring potential migrants, albeit to small extends only
+\end{itemize}
+:::
+::: {.column width="50%"}
+
+\input{../tables/reg_table}
+
+:::
+::::
+
+
+# Conclusion
+
+## Key Takeaways
+
+- Fence construction significantly reduces out-migration from Mexico to the United States
+
+  - Potential migrants are `r label_percent(accuracy = .1, suffix = "\\%")(main_effect)` less likely to migrate
+  - Only relative to an already small baseline level of migration
+
+- Event study results indicate presence of pre-trends
+
+  - Out-migration from municipalities with constructed border does not develop in parallel to out-migration from non-fenced municipalities
+  - Effects are likely overstated
+  - Differences to @f20 might arise due to random draw of observations
+
+
+# References
+
+## References
+
+::: {#refs}
+:::
+
+
+# Appendix
+
+## Event Sudy Results (LPM)
+
+![Event Study Results (OLS)](../figures/event_plot_lpm.png){#fig-event-ols fig-align="center"}
